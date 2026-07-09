@@ -1,0 +1,7 @@
+# Keep shell scripts LF so they run on macOS/Linux; Windows batch stays CRLF.
+* text=auto
+*.command text eol=lf
+*.sh text eol=lf
+*.py text eol=lf
+*.bat text eol=crlf
+*.png binary
