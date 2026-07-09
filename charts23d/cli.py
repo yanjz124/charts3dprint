@@ -211,11 +211,7 @@ def generate(chart, outdir, opts, *, color=False, palette=None, order=None,
     ident = (chart["airport"].get("icao") or chart["airport"].get("apt")
              or chart["ident"]).upper()
 
-    feats = extract.extract(chart["pdf_path"])
-    if not no_complete:
-        n = complete.add_completeness(chart["pdf_path"], feats, dpi=complete_dpi)
-        if n:
-            print(f"Completeness pass: recovered ink the vectors missed ({n} color group(s)).")
+    feats = extract.load_features(chart["pdf_path"], do_complete=not no_complete)
 
     if palette:
         pal = _parse_palette(palette)

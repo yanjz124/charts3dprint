@@ -201,3 +201,21 @@ def extract(pdf_path):
                 except Exception:
                     pass
     return feats
+
+
+def load_features(pdf_path, do_complete=True):
+    """Auto-detect vector vs raster chart and return extracted Features.
+    Raster (flattened bitmap, e.g. some Jeppesen PDFs) goes through color
+    quantization; vector charts get the normal extract + completeness pass."""
+    from . import raster, complete
+    if raster.is_raster(pdf_path):
+        f = raster.extract_raster(pdf_path)
+        print(f"Raster chart detected -> {len(f.colors)} color(s) "
+              f"(gray anti-aliasing merged to ink; faint tints may be lost).")
+        return f
+    f = extract(pdf_path)
+    if do_complete:
+        n = complete.add_completeness(pdf_path, f)
+        if n:
+            print(f"Completeness pass: recovered ink the vectors missed ({n} color group(s)).")
+    return f

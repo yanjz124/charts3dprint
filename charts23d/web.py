@@ -37,10 +37,8 @@ def _remapped(d):
     bed = float(d.get("bed") or 256)
     nozzle = float(d.get("nozzle") or 0.2)
     pk = chart["pdf_path"]
-    if pk not in _feats:                                  # slow: extract + completeness
-        f = extract.extract(pk)
-        complete.add_completeness(pk, f)
-        _feats[pk] = f
+    if pk not in _feats:                                  # slow: extract (+ completeness / raster)
+        _feats[pk] = extract.load_features(pk)
     key = (pk, bed, nozzle)
     if key not in _base_plans:                            # re-plan on bed/nozzle change
         bp = build.plan(_feats[pk], build.Options(
