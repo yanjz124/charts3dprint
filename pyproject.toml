@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "charts23d"
+version = "0.1.0"
+description = "Turn FAA / Jeppesen aviation charts into multicolor 3D-printable models (STL / 3MF)."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "yanjz124" }]
+keywords = ["3d-printing", "stl", "3mf", "faa", "aviation", "charts", "airport-diagram", "bambu"]
+dependencies = [
+    "PyMuPDF>=1.24",
+    "shapely>=2.0",
+    "trimesh>=4.0",
+    "manifold3d>=2.3",
+    "mapbox_earcut>=1.0",
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "matplotlib>=3.7",
+    "Flask>=2.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/yanjz124/charts23d"
+
+[project.scripts]
+charts23d = "charts23d.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["charts23d*"]
