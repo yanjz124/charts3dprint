@@ -176,6 +176,8 @@ def extract(pdf_path):
     doc = fitz.open(pdf_path)
     page = doc[0]
     feats = Features(page.rect.width, page.rect.height)
+    # white fills bigger than this are a page/panel background (paper), not a mark
+    white_max = 0.15 * page.rect.width * page.rect.height
     for d in page.get_drawings():
         subs = _subpaths(d["items"])
         if not subs:
@@ -191,8 +193,8 @@ def extract(pdf_path):
                 feats.colors.add(fk)
         elif fill_c is not None and min(fill_c) > 0.93:   # explicit white mark
             g = _evenodd_fill(subs)
-            if g is not None and not g.is_empty:
-                feats.white_fills.append(g)
+            if g is not None and not g.is_empty and g.area < white_max:
+                feats.white_fills.append(g)   # small white mark -> carve-out
         if sk:
             for s in subs:
                 try:

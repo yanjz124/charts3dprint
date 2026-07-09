@@ -42,38 +42,17 @@ def _rasterize_vectors(feats, W, H, Wp, Hp, dpi):
 
 
 def _polygonize(mask, s):
-    """Binary mask -> shapely geometry (even-odd holes), scaled px -> PDF points."""
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    cs = ax.contour(mask.astype(float), levels=[0.5])
-    segs = list(cs.allsegs[0]) if cs.allsegs else []
-    plt.close(fig)
-    polys = []
-    for seg in segs:
-        if len(seg) >= 4:
-            try:
-                p = Polygon(seg / s)
-                if not p.is_valid:
-                    p = p.buffer(0)
-                if not p.is_empty and p.area > 0:
-                    polys.append(p)
-            except Exception:
-                pass
-    if not polys:
-        return None
-    g = polys[0]
-    for p in polys[1:]:
-        try:
-            g = g.symmetric_difference(p)
-        except Exception:
-            g = unary_union([g, p])
-    if not g.is_valid:            # keep raster-derived contours clean for meshing
-        g = g.buffer(0)
-    return g if not g.is_empty else None
+    """Binary mask -> shapely geometry (even-odd holes), scaled px -> PDF points.
+    Uses the fast STRtree even-odd fill (no pairwise ops) so text-heavy charts
+    don't blow up."""
+    from . import raster
+    return raster._polygonize_mask(mask, s)
 
 
-def add_completeness(pdf_path, feats, dpi=350, dilate=2, min_gap_px=20):
-    """Find ink missed by the vectors and append it to feats (in-place)."""
+def add_completeness(pdf_path, feats, dpi=150, dilate=2, min_gap_px=20):
+    """Find ink missed by the vectors and append it to feats (in-place).
+    150 DPI already exceeds a 0.2 mm nozzle's resolution and keeps text-heavy
+    charts fast."""
     page = fitz.open(pdf_path)[0]
     W, H = page.rect.width, page.rect.height
     s = dpi / 72.0
