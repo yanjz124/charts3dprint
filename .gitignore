@@ -12,3 +12,6 @@ uploads/
 *.stl
 *.3mf
 *.png
+# ...but keep documentation images
+!docs/
+!docs/*.png

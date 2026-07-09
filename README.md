@@ -9,28 +9,40 @@ Aviation charts are *vector* PDFs, so the linework extrudes crisply instead of
 looking like a muddy heightmap. Colors come straight from the PDF; you remap them
 to the filaments you actually have.
 
-## Install
+![example: a Charlotte (KCLT) airport diagram, color-separated for printing](docs/example.png)
 
-Requires **Python 3.9+**.
+## Quick start (no experience needed)
+
+1. Install **Python 3.9+** from [python.org](https://www.python.org/downloads/).
+   On Windows, tick **"Add Python to PATH"** in the installer.
+2. Download this project: green **Code ▸ Download ZIP** button above, then unzip.
+   (Or `git clone https://github.com/yanjz124/charts23d`.)
+3. **Double-click the launcher** in the folder:
+   - **Windows:** `run.bat`
+   - **macOS:** `run.command`  (first time: right-click ▸ Open to allow it)
+   - **Linux:** `./run.command`
+
+That's it — it installs what it needs (first run only) and opens the app in your
+browser at **http://127.0.0.1:5000**. Search a chart (or upload a PDF), pick your
+colors and printer, and download the STL or 3MF.
+
+## Manual install (developers)
 
 ```bash
 git clone https://github.com/yanjz124/charts23d
 cd charts23d
-pip install .          # installs the `charts23d` command
-```
-
-or, without installing the command:
-
-```bash
-pip install -r requirements.txt
-python -m charts23d ...
+pip install -r requirements.txt      # or: pip install .
+python -m charts23d --gui            # GUI  (also: --help for everything)
 ```
 
 ## Use
 
+> Examples use `python -m charts23d` (always works). If you ran `pip install .`
+> and your Python Scripts folder is on PATH, the shorter `charts23d` also works.
+
 ### Web GUI (easiest — see the colors)
 ```bash
-charts23d --gui                 # opens http://127.0.0.1:5000
+python -m charts23d --gui       # opens http://127.0.0.1:5000
 ```
 Search a chart **or upload a PDF**, then pick each filament color with a **live
 preview** (same color merges; drag to reorder; □ = same level; × = drop to
@@ -39,25 +51,25 @@ STL or the pre-colored 3MF.
 
 ### Interactive wizard (terminal)
 ```bash
-charts23d                       # guided: cycle -> airport -> chart type -> chart -> options
+python -m charts23d             # guided: cycle -> airport -> chart type -> chart -> options
 ```
 
 ### One-liners
 ```bash
 # Airport diagram, filling a 256 mm bed, pre-colored 3MF (min filament swaps):
-charts23d KATL --fit-bed --min-swaps -o out
+python -m charts23d KATL --fit-bed --min-swaps -o out
 
 # Next d-TPP cycle:
-charts23d KCLT --fit-bed --min-swaps --cycle 2607 -o out
+python -m charts23d KCLT --fit-bed --min-swaps --cycle 2607 -o out
 
 # An approach plate, quantized to gray+black (grayscale chart):
-charts23d ILM --chart IAP --proc "ILS Z RWY 06" --layered --palette "gray,black" -o out
+python -m charts23d ILM --chart IAP --proc "ILS Z RWY 06" --layered --palette "gray,black" -o out
 
 # Any local PDF (Jeppesen, etc.):
-charts23d --pdf mychart.pdf --fit-bed --min-swaps --palette "gray,black" -o out
+python -m charts23d --pdf mychart.pdf --fit-bed --min-swaps --palette "gray,black" -o out
 
 # List all charts for an airport:
-charts23d KATL --list
+python -m charts23d KATL --list
 ```
 
 ## Printers
