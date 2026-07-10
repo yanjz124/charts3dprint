@@ -172,9 +172,26 @@ def quantize_to_palette(feats, palette_hex):
     return remap
 
 
+def _vector_page(pdf_path):
+    """Return a page whose get_drawings() includes TEXT as vector paths, via a
+    PyMuPDF SVG 'text-as-path' round-trip. Font-based labels (Jeppesen, FAA
+    marginalia) then extrude as crisp vectors instead of being raster-traced.
+    Falls back to the original page if the round-trip yields less geometry."""
+    page = fitz.open(pdf_path)[0]
+    try:
+        svg = page.get_svg_image(text_as_path=True)
+        sd = fitz.open(stream=svg.encode("utf-8"), filetype="svg")
+        p2 = fitz.open("pdf", sd.convert_to_pdf())[0]
+        if (sum(len(d["items"]) for d in p2.get_drawings())
+                >= sum(len(d["items"]) for d in page.get_drawings())):
+            return p2
+    except Exception:
+        pass
+    return page
+
+
 def extract(pdf_path):
-    doc = fitz.open(pdf_path)
-    page = doc[0]
+    page = _vector_page(pdf_path)
     feats = Features(page.rect.width, page.rect.height)
     # white fills bigger than this are a page/panel background (paper), not a mark
     white_max = 0.15 * page.rect.width * page.rect.height
@@ -207,17 +224,13 @@ def extract(pdf_path):
 
 def load_features(pdf_path, do_complete=True):
     """Auto-detect vector vs raster chart and return extracted Features.
-    Raster (flattened bitmap, e.g. some Jeppesen PDFs) goes through color
-    quantization; vector charts get the normal extract + completeness pass."""
-    from . import raster, complete
+    Vector charts (incl. font text, via the SVG text-as-path round-trip) extrude
+    crisply; raster charts (flattened bitmaps, e.g. some Jeppesen PDFs) go through
+    color quantization."""
+    from . import raster
     if raster.is_raster(pdf_path):
         f = raster.extract_raster(pdf_path)
         print(f"Raster chart detected -> {len(f.colors)} color(s) "
               f"(gray anti-aliasing merged to ink; faint tints may be lost).")
         return f
-    f = extract(pdf_path)
-    if do_complete:
-        n = complete.add_completeness(pdf_path, f)
-        if n:
-            print(f"Completeness pass: recovered ink the vectors missed ({n} color group(s)).")
-    return f
+    return extract(pdf_path)

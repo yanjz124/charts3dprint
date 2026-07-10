@@ -174,9 +174,12 @@ def plan(feats, opts):
         parts = []
         if c in fill_b:
             fu = affine_transform(unary_union(fill_b[c]), A)
-            # grow fills only up to the nozzle (not the full line weight) so text
-            # stems reach printability without crushing their counters
-            parts.append(_enforce_min_width(fu, nozzle))
+            # grow thin fills (hatch, filled lines) up to the nozzle -- but skip
+            # text-heavy unions (thousands of glyphs): growing them is very slow
+            # and just bolds the text, which already prints fine as-is.
+            if len(_polys(fu)) <= 300:
+                fu = _enforce_min_width(fu, nozzle)
+            parts.append(fu)
         if c in stroke_b:
             parts.append(affine_transform(unary_union(stroke_b[c]), A))  # already uniform
         u = unary_union(parts) if parts else box(0, 0, 0, 0)
