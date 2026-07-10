@@ -241,7 +241,7 @@ label{display:flex;gap:5px;align-items:center}
 <div id=main><div id=imgwrap class=small>Pick a chart to begin.</div></div>
 <div id=ribbon><span id=status></span><b id=name></b><span id=info></span></div>
 <script>
-let S={cycle:null,ident:null,pdf:null,colors:[]}; // colors:[{pdf,target,drop,group}]
+let S={cycle:null,ident:null,pdf:null,layers:[]}; // layers:[{pdfs:[hex],target,drop,group,sel}]
 const $=id=>document.getElementById(id);
 async function j(u,o){const r=await fetch(u,o);return r.json()}
 (async()=>{const c=await j('/api/cycles');$('cycle').innerHTML=c.map(x=>`<option value=${x.code}>${x.label} — ${x.code} (${x.from} → ${x.to})</option>`).join('')})();
@@ -262,35 +262,38 @@ async function uploadPdf(){const f=$('pdf').files[0];if(!f)return;
  S.pdf_path=r.pdf_path;S.ident=r.name;S.pdf=null;startLoad();}
 async function startLoad(){$('imgwrap').innerHTML='Loading & analyzing chart… (first load can take a minute)';
  $('editsec').classList.add('hidden');
- const r=await preview({});S.colors=r.detected.slice().reverse().map(c=>({pdf:c,target:c,drop:false,group:false}));
+ const r=await preview({});S.layers=r.detected.slice().reverse().map(c=>({pdfs:[c],target:c,drop:false,group:false,sel:false}));
  renderColors();$('editsec').classList.remove('hidden');apply();}
-function renderColors(){$('colors').innerHTML='';S.colors.forEach((c,i)=>{
+function renderColors(){$('colors').innerHTML='';S.layers.forEach((c,i)=>{
  const d=document.createElement('div');d.className='row';
  d.ondragover=e=>e.preventDefault();
- d.ondrop=e=>{const f=+e.dataTransfer.getData('i');if(isNaN(f))return;const m=S.colors.splice(f,1)[0];S.colors.splice(i,0,m);renderColors();apply();};
+ d.ondrop=e=>{const f=+e.dataTransfer.getData('i');if(isNaN(f))return;const m=S.layers.splice(f,1)[0];S.layers.splice(i,0,m);renderColors();apply();};
  const cb=document.createElement('input');cb.type='checkbox';cb.checked=!!c.sel;cb.title='select for merge';
  cb.onchange=e=>{c.sel=e.target.checked};d.appendChild(cb);
  const gr=document.createElement('span');gr.className='grip';gr.textContent='▤';gr.title='drag to reorder';gr.draggable=true;
  gr.ondragstart=e=>e.dataTransfer.setData('i',i);d.appendChild(gr);
  const sw=document.createElement('input');sw.type='color';sw.className='sw';sw.value=c.target;
  sw.oninput=()=>{c.target=sw.value;apply()};d.appendChild(sw);
- const lab=document.createElement('span');lab.textContent=c.pdf;lab.className='small';lab.style.flex='1';d.appendChild(lab);
+ const lab=document.createElement('span');lab.textContent=c.pdfs.length>1?(c.pdfs[0]+' +'+(c.pdfs.length-1)):c.pdfs[0];
+ lab.className='small';lab.style.flex='1';d.appendChild(lab);
  if(i>0){const g=document.createElement('button');g.className='sec';g.textContent=c.group?'▬':'▢';g.title='same level as row above';
   g.onclick=()=>{c.group=!c.group;renderColors();apply()};d.appendChild(g);}
  const x=document.createElement('button');x.className='sec';x.textContent=c.drop?'＋':'×';x.title='drop to background';
  x.onclick=()=>{c.drop=!c.drop;renderColors();apply()};d.appendChild(x);
  if(c.drop)d.style.opacity=.4;
  $('colors').appendChild(d);});}
-function checkAll(v){S.colors.forEach(c=>c.sel=!!v);renderColors();}
-function mergeSelected(){const sel=S.colors.filter(c=>c.sel&&!c.drop);
- if(sel.length<2){alert('Check 2 or more colors to merge.');return;}
- const t=sel[0].target;               // topmost checked color wins
- sel.forEach(c=>{c.target=t;c.sel=false;});
+function checkAll(v){S.layers.forEach(c=>c.sel=!!v);renderColors();}
+function mergeSelected(){const sel=S.layers.filter(c=>c.sel&&!c.drop);
+ if(sel.length<2){alert('Check 2 or more rows to merge.');return;}
+ const keep=sel[0];                                  // topmost checked stays
+ keep.pdfs=[].concat(...sel.map(l=>l.pdfs));          // absorb the others' colors
+ sel.forEach(l=>l.sel=false);
+ S.layers=S.layers.filter(l=>l===keep||!sel.includes(l));  // remove the merged rows
  renderColors();apply();}
 function buildParams(){const mapping={};
- S.colors.forEach(c=>{mapping[c.pdf]=c.drop?null:c.target;});
+ S.layers.forEach(c=>c.pdfs.forEach(p=>{mapping[p]=c.drop?null:c.target;}));
  const dg=[];   // display order is top->bottom; group = same level as row above
- S.colors.filter(c=>!c.drop).forEach(c=>{if(c.group&&dg.length)dg[dg.length-1].push(c.target);else dg.push([c.target]);});
+ S.layers.filter(c=>!c.drop).forEach(c=>{if(c.group&&dg.length)dg[dg.length-1].push(c.target);else dg.push([c.target]);});
  const order=dg.reverse();   // backend stacks bottom->top
  const src=S.pdf_path?{pdf_path:S.pdf_path}:{cycle:S.cycle,ident:S.ident,pdf:S.pdf};
  const bed=+(($('bed')||{}).value||256),nozzle=+(($('nozzle')||{}).value||0.2);
