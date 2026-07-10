@@ -195,6 +195,7 @@ label{display:flex;gap:5px;align-items:center}
 </style></head><body>
 <div id=side>
 <h1>Chart &#8594; 3D</h1>
+<button class=sec style="width:100%;margin-bottom:8px" onclick=resetAll()>↺ New chart / reset</button>
 <h3>Upload a PDF (Jeppesen / any vector chart)</h3>
 <div class=row><input type=file id=pdf accept="application/pdf" style=flex:1><button class=sec onclick=uploadPdf()>Use</button></div>
 <div class=small>— or search the FAA database —</div>
@@ -264,8 +265,14 @@ async function uploadPdf(){const f=$('pdf').files[0];if(!f)return;
  $('imgwrap').innerHTML='Uploading…';const fd=new FormData();fd.append('pdf',f);
  const r=await fetch('/api/upload',{method:'POST',body:fd}).then(x=>x.json());
  S.pdf_path=r.pdf_path;S.ident=r.name;S.pdf=null;startLoad();}
+function resetAll(){S.layers=[];S.undo=[];S.redo=[];S.pdf_path=null;S.pdf=null;S.ident=null;
+ ['editsec','chartsec'].forEach(id=>$(id).classList.add('hidden'));
+ $('results').innerHTML='';$('dl').innerHTML='';$('colors').innerHTML='';$('q').value='';$('pdf').value='';
+ $('imgwrap').innerHTML='Pick a chart to begin.';
+ $('name').textContent='';$('info').textContent='';$('status').textContent='';
+ $('side').scrollTop=0;$('q').focus();}
 async function startLoad(){$('imgwrap').innerHTML='Loading & analyzing chart… (first load can take a minute)';
- $('editsec').classList.add('hidden');
+ $('dl').innerHTML='';$('editsec').classList.add('hidden');
  const r=await preview({});S.layers=r.detected.slice().reverse().map(c=>({pdfs:[c],target:c,drop:false,group:false,sel:false}));
  S.undo=[];S.redo=[];renderColors();$('editsec').classList.remove('hidden');apply();}
 function renderColors(){$('colors').innerHTML='';S.layers.forEach((c,i)=>{
