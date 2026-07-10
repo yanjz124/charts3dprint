@@ -42,10 +42,16 @@ def _choose_cycle(cache):
     opts = faa.cycle_options(count=2)
     labels = ["current", "next"]
     print("\nCycle:")
+    avail = []
     for i, (code, frm, to) in enumerate(opts):
-        print(f"  {i + 1}) {labels[i]:7s}  {code}   {frm} -> {to}")
+        ok = (i == 0) or faa._url_ok(faa._metafile_url(code))
+        avail.append(ok)
+        note = "" if ok else "  (not published yet)"
+        print(f"  {i + 1}) {labels[i]:7s}  {code}   {frm} -> {to}{note}")
     sel = _ask("Select cycle [1]: ", "1")
-    return (opts[1] if sel.strip() == "2" else opts[0])[0]
+    if sel.strip() == "2" and avail[1]:
+        return opts[1][0]
+    return opts[0][0]
 
 
 def _choose_airport(meta):

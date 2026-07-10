@@ -58,8 +58,10 @@ def index():
 def cycles():
     out = []
     for i, (code, frm, to) in enumerate(faa.cycle_options(count=2)):
+        # the next cycle is usually published ~2 weeks ahead; check it's really there
+        avail = (i == 0) or faa._url_ok(faa._metafile_url(code))
         out.append({"code": code, "label": ("current" if i == 0 else "next"),
-                    "from": str(frm), "to": str(to)})
+                    "from": str(frm), "to": str(to), "available": avail})
     return jsonify(out)
 
 
@@ -249,7 +251,7 @@ function redo(){if(!S.redo.length)return;S.undo.push(JSON.stringify(S.layers));S
 document.addEventListener('keydown',e=>{if(e.ctrlKey&&(e.key=='z'||e.key=='Z')){e.preventDefault();undo();}else if(e.ctrlKey&&(e.key=='y'||e.key=='Y')){e.preventDefault();redo();}});
 const $=id=>document.getElementById(id);
 async function j(u,o){const r=await fetch(u,o);return r.json()}
-(async()=>{const c=await j('/api/cycles');$('cycle').innerHTML=c.map(x=>`<option value=${x.code}>${x.label} — ${x.code} (${x.from} → ${x.to})</option>`).join('')})();
+(async()=>{const c=await j('/api/cycles');$('cycle').innerHTML=c.map(x=>`<option value=${x.code} ${x.available?'':'disabled'}>${x.label} — ${x.code} (${x.from} → ${x.to})${x.available?'':' — not published yet'}</option>`).join('')})();
 async function doSearch(){const q=$('q').value.trim();if(!q)return;
  const r=await j('/api/search?cycle='+$('cycle').value+'&q='+encodeURIComponent(q));
  $('results').innerHTML=r.map(a=>`<div onclick="pickAirport('${a.ident}')">${a.ident} · ${a.name}</div>`).join('')||'<div class=small>none found</div>';}
