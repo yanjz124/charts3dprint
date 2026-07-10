@@ -195,7 +195,9 @@ def extract(pdf_path):
     feats = Features(page.rect.width, page.rect.height)
     # white fills bigger than this are a page/panel background (paper), not a mark
     white_max = 0.15 * page.rect.width * page.rect.height
-    for d in page.get_drawings():
+    raw_fills = []    # (color, geom, seqno)
+    raw_white = []    # (geom, seqno)  small white marks (reversed text, dots)
+    for sq, d in enumerate(page.get_drawings()):
         subs = _subpaths(d["items"])
         if not subs:
             continue
@@ -206,12 +208,11 @@ def extract(pdf_path):
         if fk:
             g = _evenodd_fill(subs)
             if g is not None and not g.is_empty:
-                feats.fills.append((fk, g))
-                feats.colors.add(fk)
+                raw_fills.append((fk, g, sq))
         elif fill_c is not None and min(fill_c) > 0.93:   # explicit white mark
             g = _evenodd_fill(subs)
             if g is not None and not g.is_empty and g.area < white_max:
-                feats.white_fills.append(g)   # small white mark -> carve-out
+                raw_white.append((g, sq))
         if sk:
             for s in subs:
                 try:
@@ -219,6 +220,30 @@ def extract(pdf_path):
                     feats.colors.add(sk)
                 except Exception:
                     pass
+
+    # Draw-order-aware white carve: a white mark only erases ink drawn BEFORE it
+    # (underneath). Reversed text (white over a black box) carves; a white panel
+    # under a black logo does not eat the logo drawn on top.
+    if raw_white:
+        from shapely.strtree import STRtree
+        wgeom = [w[0] for w in raw_white]
+        wseq = [w[1] for w in raw_white]
+        tree = STRtree(wgeom)
+        for col, g, sq in raw_fills:
+            over = [wgeom[j] for j in tree.query(g)
+                    if wseq[j] > sq and wgeom[j].intersects(g)]
+            if over:
+                try:
+                    g = g.difference(unary_union(over))
+                except Exception:
+                    pass
+            if g is not None and not g.is_empty:
+                feats.fills.append((col, g))
+                feats.colors.add(col)
+    else:
+        for col, g, sq in raw_fills:
+            feats.fills.append((col, g))
+            feats.colors.add(col)
     return feats
 
 
