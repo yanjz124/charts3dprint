@@ -112,8 +112,9 @@ def api_preview():
     d = request.get_json(force=True)
     with _LOCK:
         bp, chart, p = _remapped(d)
-        png = preview.render_bytes(p, title=f"{chart['ident']}  {chart['chart_name']}")
+        png = preview.render_bytes(p, title=None)   # title shown as HTML heading, not on image
     return jsonify({**_plan_summary(bp, p),
+                    "name": chart["chart_name"] or chart["ident"],
                     "image": "data:image/png;base64," + base64.b64encode(png).decode()})
 
 
@@ -180,7 +181,11 @@ button{cursor:pointer;background:#3b82f6;color:#fff;border:none}
 button.sec{background:#8883;color:inherit}
 #results div{padding:5px 7px;border-radius:6px;cursor:pointer}
 #results div:hover{background:#3b82f633}
-#img{max-width:100%;max-height:96vh;box-shadow:0 2px 12px #0004;background:#fff}
+#img{max-width:100%;max-height:90vh;box-shadow:0 2px 12px #0004;background:#fff}
+#main{padding-bottom:30px}
+#ribbon{position:fixed;left:0;right:0;bottom:0;display:flex;align-items:center;gap:14px;padding:3px 12px;background:#1c1c1cdd;color:#eee;font-size:12px;z-index:30}
+#name{font-weight:600}
+#status{color:#8ab4ff}
 .row{display:flex;align-items:center;gap:6px;margin:4px 0}
 .sw{width:26px;height:26px;border-radius:5px;border:1px solid #8886;padding:0}
 .grip{cursor:grab;opacity:.5;padding:0 3px}
@@ -204,8 +209,9 @@ label{display:flex;gap:5px;align-items:center}
 <button style="margin-top:8px;width:100%" onclick=loadChart()>Load chart</button>
 </div>
 <div id=editsec class=hidden>
-<h3>4 · Colors (bottom → top)</h3>
-<div class=small>Pick each filament color — same color merges. Drag ▤ to reorder. □ = same level as above.</div>
+<h3>4 · Colors & layers (top → bottom)</h3>
+<div class=small>Top row = top layer. ☑ check rows and <b>Merge</b> to combine into one filament. Swatch = recolor · drag ▤ = reorder · □ = same level as row above · × = drop.</div>
+<div class=row><button class=sec onclick=mergeSelected()>⧉ Merge checked</button><button class=sec onclick=checkAll(1)>all</button><button class=sec onclick=checkAll(0)>none</button></div>
 <div id=colors></div>
 <h3>Style</h3>
 <label><input type=radio name=style value=min-swaps checked> min-swaps (fewest changes)</label>
@@ -228,12 +234,12 @@ label{display:flex;gap:5px;align-items:center}
 </select>
 <div class=row><span>Bed mm</span><input id=bed type=number value=256 step=1 style=width:70px oninput=apply()>
 <span>Nozzle</span><input id=nozzle type=number value=0.2 step=0.05 style=width:60px oninput=apply()></div>
-<div id=info class=small></div>
 <button style="margin-top:10px;width:100%" onclick=generate()>Generate</button>
 <div id=dl style="margin-top:8px"></div>
 </div>
 </div>
 <div id=main><div id=imgwrap class=small>Pick a chart to begin.</div></div>
+<div id=ribbon><span id=status></span><b id=name></b><span id=info></span></div>
 <script>
 let S={cycle:null,ident:null,pdf:null,colors:[]}; // colors:[{pdf,target,drop,group}]
 const $=id=>document.getElementById(id);
@@ -256,42 +262,56 @@ async function uploadPdf(){const f=$('pdf').files[0];if(!f)return;
  S.pdf_path=r.pdf_path;S.ident=r.name;S.pdf=null;startLoad();}
 async function startLoad(){$('imgwrap').innerHTML='Loading & analyzing chart… (first load can take a minute)';
  $('editsec').classList.add('hidden');
- const r=await preview({});S.colors=r.detected.map(c=>({pdf:c,target:c,drop:false,group:false}));
+ const r=await preview({});S.colors=r.detected.slice().reverse().map(c=>({pdf:c,target:c,drop:false,group:false}));
  renderColors();$('editsec').classList.remove('hidden');apply();}
 function renderColors(){$('colors').innerHTML='';S.colors.forEach((c,i)=>{
- const d=document.createElement('div');d.className='row';d.draggable=true;
- d.ondragstart=e=>e.dataTransfer.setData('i',i);
+ const d=document.createElement('div');d.className='row';
  d.ondragover=e=>e.preventDefault();
- d.ondrop=e=>{const f=+e.dataTransfer.getData('i');const m=S.colors.splice(f,1)[0];S.colors.splice(i,0,m);renderColors();apply();};
- d.innerHTML=`<span class=grip>▤</span>`;
+ d.ondrop=e=>{const f=+e.dataTransfer.getData('i');if(isNaN(f))return;const m=S.colors.splice(f,1)[0];S.colors.splice(i,0,m);renderColors();apply();};
+ const cb=document.createElement('input');cb.type='checkbox';cb.checked=!!c.sel;cb.title='select for merge';
+ cb.onchange=e=>{c.sel=e.target.checked};d.appendChild(cb);
+ const gr=document.createElement('span');gr.className='grip';gr.textContent='▤';gr.title='drag to reorder';gr.draggable=true;
+ gr.ondragstart=e=>e.dataTransfer.setData('i',i);d.appendChild(gr);
  const sw=document.createElement('input');sw.type='color';sw.className='sw';sw.value=c.target;
  sw.oninput=()=>{c.target=sw.value;apply()};d.appendChild(sw);
  const lab=document.createElement('span');lab.textContent=c.pdf;lab.className='small';lab.style.flex='1';d.appendChild(lab);
- if(i>0){const g=document.createElement('label');g.title='same level as above';
-  g.innerHTML=`<input type=checkbox ${c.group?'checked':''}>▂`;g.querySelector('input').onchange=e=>{c.group=e.target.checked;apply()};d.appendChild(g);}
+ if(i>0){const g=document.createElement('button');g.className='sec';g.textContent=c.group?'▬':'▢';g.title='same level as row above';
+  g.onclick=()=>{c.group=!c.group;renderColors();apply()};d.appendChild(g);}
  const x=document.createElement('button');x.className='sec';x.textContent=c.drop?'＋':'×';x.title='drop to background';
  x.onclick=()=>{c.drop=!c.drop;renderColors();apply()};d.appendChild(x);
  if(c.drop)d.style.opacity=.4;
  $('colors').appendChild(d);});}
-function buildParams(){const mapping={},order=[];
+function checkAll(v){S.colors.forEach(c=>c.sel=!!v);renderColors();}
+function mergeSelected(){const sel=S.colors.filter(c=>c.sel&&!c.drop);
+ if(sel.length<2){alert('Check 2 or more colors to merge.');return;}
+ const t=sel[0].target;               // topmost checked color wins
+ sel.forEach(c=>{c.target=t;c.sel=false;});
+ renderColors();apply();}
+function buildParams(){const mapping={};
  S.colors.forEach(c=>{mapping[c.pdf]=c.drop?null:c.target;});
- S.colors.filter(c=>!c.drop).forEach(c=>{if(c.group&&order.length)order[order.length-1].push(c.target);else order.push([c.target]);});
+ const dg=[];   // display order is top->bottom; group = same level as row above
+ S.colors.filter(c=>!c.drop).forEach(c=>{if(c.group&&dg.length)dg[dg.length-1].push(c.target);else dg.push([c.target]);});
+ const order=dg.reverse();   // backend stacks bottom->top
  const src=S.pdf_path?{pdf_path:S.pdf_path}:{cycle:S.cycle,ident:S.ident,pdf:S.pdf};
  const bed=+(($('bed')||{}).value||256),nozzle=+(($('nozzle')||{}).value||0.2);
  return {...src,mapping,order,bed,nozzle};}
+function busy(on){$('status').textContent=on?'⏳ working…':'';}
 function setPrinter(){const v=$('printer').value;if(!v)return;const a=v.split(',');$('bed').value=a[0];$('nozzle').value=a[1];apply();}
-async function preview(extra){const p={...buildParams(),...extra};
- const r=await j('/api/preview',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(p)});
- $('imgwrap').innerHTML=`<img id=img src="${r.image}">`;
- $('info').innerHTML=`Size ${r.size_mm[0]}×${r.size_mm[1]} mm · detail ${r.survive}% · ${r.filaments} filament(s)`;
- return r;}
+async function preview(extra){const p={...buildParams(),...extra};busy(1);
+ try{const r=await j('/api/preview',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(p)});
+  $('imgwrap').innerHTML=`<img id=img src="${r.image}">`;
+  $('name').textContent=r.name||'';
+  $('info').innerHTML=`Size ${r.size_mm[0]}×${r.size_mm[1]} mm · detail ${r.survive}% · ${r.filaments} filament(s)`;
+  return r;}
+ finally{busy(0);}}
 let T;function apply(){clearTimeout(T);T=setTimeout(()=>preview({}),250);}
-async function generate(){$('dl').innerHTML='Building mesh…';
+async function generate(){$('dl').innerHTML='Building mesh…';busy(1);
  const style=document.querySelector('input[name=style]:checked').value;
  const p={...buildParams(),style,base:+$('base').value};
- const r=await j('/api/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(p)});
- $('dl').innerHTML=`<a href="/download/${r.file}"><button style="width:100%;margin-bottom:6px">⬇ 3MF (color · ${r.filaments} filaments)</button></a>`
-  +`<a href="/download/${r.stl}"><button class=sec style=width:100%>⬇ STL (single color)</button></a>`;}
+ try{const r=await j('/api/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(p)});
+  $('dl').innerHTML=`<a href="/download/${r.file}"><button style="width:100%;margin-bottom:6px">⬇ 3MF (color · ${r.filaments} filaments)</button></a>`
+   +`<a href="/download/${r.stl}"><button class=sec style=width:100%>⬇ STL (single color)</button></a>`;}
+ finally{busy(0);}}
 </script></body></html>"""
 
 
