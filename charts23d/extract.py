@@ -4,6 +4,7 @@ own colors (one group per distinct color -> one filament). No semantic buckets:
 whatever colors are in the PDF are what you get. Geometry is in PDF-point space.
 """
 import collections
+import colorsys
 import fitz
 from shapely.geometry import LineString, Polygon
 from shapely.ops import unary_union
@@ -17,14 +18,26 @@ def _hex(rgb):
         *(max(0, min(255, round(c * 255))) for c in rgb))
 
 
+def boost_pale(r, g, b):
+    """A near-white but colored value (e.g. Jeppesen's pale-blue mandatory
+    altitudes) is invisible on a white base. Deepen it to a printable version of
+    the SAME hue. Neutral (gray) and already-dark colors are left alone."""
+    lum = 0.299 * r + 0.587 * g + 0.114 * b
+    if lum > 0.78 and (max(r, g, b) - min(r, g, b)) > 0.06:
+        h, s, v = colorsys.rgb_to_hsv(r, g, b)
+        return colorsys.hsv_to_rgb(h, min(1.0, s * 2.5 + 0.35), 0.62)
+    return (r, g, b)
+
+
 def color_key(rgb):
     """Quantized '#rrggbb' key for a PDF color, or None to skip (white/paper)."""
     if rgb is None:
         return None
-    r, g, b = (round(c, _QUANT) for c in rgb)
+    r, g, b = rgb
     if r > 0.93 and g > 0.93 and b > 0.93:
         return None  # white == paper/background, comes from the base plate
-    return _hex((r, g, b))
+    r, g, b = boost_pale(r, g, b)
+    return _hex((round(r, _QUANT), round(g, _QUANT), round(b, _QUANT)))
 
 
 def _rgb(hexcolor):
