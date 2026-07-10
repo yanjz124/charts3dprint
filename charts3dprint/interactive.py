@@ -1,6 +1,6 @@
 """
 Interactive wizard: cycle -> airport search (paged) -> chart type -> chart ->
-options -> generate. Launched when charts23d is run with no airport identifier.
+options -> generate. Launched when charts3dprint is run with no airport identifier.
 """
 from . import faa, build
 
@@ -124,7 +124,7 @@ def _choose_options():
 
 
 def run(cache, outdir, generate):
-    print("=== charts23d — interactive ===")
+    print("=== charts3dprint — interactive ===")
     cycle = _choose_cycle(cache)
     print(f"\nLoading FAA chart index for cycle {cycle} ...")
     meta = faa.get_metafile(cycle, cache)

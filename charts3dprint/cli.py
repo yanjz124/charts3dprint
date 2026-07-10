@@ -8,7 +8,7 @@ from . import faa, extract, build, preview, export3mf, complete
 
 def _cache_dir():
     base = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~/.cache")
-    return os.path.join(base, "charts23d", "cache")
+    return os.path.join(base, "charts3dprint", "cache")
 
 
 _NAMED = {"white": (255, 255, 255), "black": (0, 0, 0), "gray": (128, 128, 128),
@@ -78,7 +78,7 @@ def _parse_order(s, present):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(
-        prog="charts23d",
+        prog="charts3dprint",
         description="Convert the current FAA airport diagram to a multicolor relief STL/3MF.",
     )
     ap.add_argument("ident", nargs="?", default=None,
@@ -135,7 +135,7 @@ def main(argv=None):
                     help="Process a local PDF directly (any vector chart, e.g. Jeppesen) "
                          "instead of an FAA lookup")
     ap.add_argument("--gui", action="store_true", help="Launch the local web GUI")
-    ap.add_argument("--cache", default=None, help="Cache dir (default: LOCALAPPDATA/charts23d/cache)")
+    ap.add_argument("--cache", default=None, help="Cache dir (default: LOCALAPPDATA/charts3dprint/cache)")
     args = ap.parse_args(argv)
 
     cache = args.cache or _cache_dir()

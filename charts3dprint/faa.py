@@ -16,7 +16,7 @@ from datetime import date, timedelta
 
 # Verified anchor: d-TPP cycle 2606 is effective 2026-06-11.
 _EPOCH = date(2026, 6, 11)
-_UA = "charts23d/0.1 (+https://aeronav.faa.gov)"
+_UA = "charts3dprint/0.1 (+https://aeronav.faa.gov)"
 BASE = "https://aeronav.faa.gov/d-tpp"
 
 

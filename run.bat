@@ -1,6 +1,6 @@
 @echo off
 REM ============================================================
-REM  charts23d - one-click launcher (Windows)
+REM  charts3dprint - one-click launcher (Windows)
 REM  Double-click this file. It installs what's needed and opens
 REM  the app in your browser.
 REM ============================================================
@@ -25,9 +25,9 @@ echo Installing dependencies ^(first run only, ~1-2 min^)...
 %PY% -m pip install -r requirements.txt --quiet --disable-pip-version-check
 
 echo.
-echo Starting charts23d - your browser will open at http://127.0.0.1:5000
+echo Starting charts3dprint - your browser will open at http://127.0.0.1:5000
 echo Keep this window open while using the app. Close it to quit.
 echo.
-%PY% -m charts23d --gui
+%PY% -m charts3dprint --gui
 
 pause

@@ -3,7 +3,7 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "charts23d"
+name = "charts3dprint"
 version = "0.1.0"
 description = "Turn FAA / Jeppesen aviation charts into multicolor 3D-printable models (STL / 3MF)."
 readme = "README.md"
@@ -24,10 +24,10 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yanjz124/charts23d"
+Homepage = "https://github.com/yanjz124/charts3dprint"
 
 [project.scripts]
-charts23d = "charts23d.cli:main"
+charts3dprint = "charts3dprint.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["charts23d*"]
+include = ["charts3dprint*"]

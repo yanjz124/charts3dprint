@@ -1,4 +1,4 @@
-# charts23d
+# charts3dprint
 
 **Turn aviation charts into multicolor 3D prints.** Point it at an FAA airport
 diagram / approach plate / SID / STAR (or upload any vector PDF, e.g. Jeppesen),
@@ -16,7 +16,7 @@ to the filaments you actually have.
 1. Install **Python 3.9+** from [python.org](https://www.python.org/downloads/).
    On Windows, tick **"Add Python to PATH"** in the installer.
 2. Download this project: green **Code ▸ Download ZIP** button above, then unzip.
-   (Or `git clone https://github.com/yanjz124/charts23d`.)
+   (Or `git clone https://github.com/yanjz124/charts3dprint`.)
 3. **Double-click the launcher** in the folder:
    - **Windows:** `run.bat`
    - **macOS:** `run.command`  (first time: right-click ▸ Open to allow it)
@@ -29,20 +29,20 @@ colors and printer, and download the STL or 3MF.
 ## Manual install (developers)
 
 ```bash
-git clone https://github.com/yanjz124/charts23d
-cd charts23d
+git clone https://github.com/yanjz124/charts3dprint
+cd charts3dprint
 pip install -r requirements.txt      # or: pip install .
-python -m charts23d --gui            # GUI  (also: --help for everything)
+python -m charts3dprint --gui            # GUI  (also: --help for everything)
 ```
 
 ## Use
 
-> Examples use `python -m charts23d` (always works). If you ran `pip install .`
-> and your Python Scripts folder is on PATH, the shorter `charts23d` also works.
+> Examples use `python -m charts3dprint` (always works). If you ran `pip install .`
+> and your Python Scripts folder is on PATH, the shorter `charts3dprint` also works.
 
 ### Web GUI (easiest — see the colors)
 ```bash
-python -m charts23d --gui       # opens http://127.0.0.1:5000
+python -m charts3dprint --gui       # opens http://127.0.0.1:5000
 ```
 Search a chart **or upload a PDF**, then pick each filament color with a **live
 preview** (same color merges; drag to reorder; □ = same level; × = drop to
@@ -51,25 +51,25 @@ STL or the pre-colored 3MF.
 
 ### Interactive wizard (terminal)
 ```bash
-python -m charts23d             # guided: cycle -> airport -> chart type -> chart -> options
+python -m charts3dprint             # guided: cycle -> airport -> chart type -> chart -> options
 ```
 
 ### One-liners
 ```bash
 # Airport diagram, filling a 256 mm bed, pre-colored 3MF (min filament swaps):
-python -m charts23d KATL --fit-bed --min-swaps -o out
+python -m charts3dprint KATL --fit-bed --min-swaps -o out
 
 # Next d-TPP cycle:
-python -m charts23d KCLT --fit-bed --min-swaps --cycle 2607 -o out
+python -m charts3dprint KCLT --fit-bed --min-swaps --cycle 2607 -o out
 
 # An approach plate, quantized to gray+black (grayscale chart):
-python -m charts23d ILM --chart IAP --proc "ILS Z RWY 06" --layered --palette "gray,black" -o out
+python -m charts3dprint ILM --chart IAP --proc "ILS Z RWY 06" --layered --palette "gray,black" -o out
 
 # Any local PDF (Jeppesen, etc.):
-python -m charts23d --pdf mychart.pdf --fit-bed --min-swaps --palette "gray,black" -o out
+python -m charts3dprint --pdf mychart.pdf --fit-bed --min-swaps --palette "gray,black" -o out
 
 # List all charts for an airport:
-python -m charts23d KATL --list
+python -m charts3dprint KATL --list
 ```
 
 ## Printers

@@ -113,7 +113,7 @@ def _write(out_path, items, colors, ext):
     model = "\n".join([
         '<?xml version="1.0" encoding="UTF-8"?>',
         f'<model unit="millimeter" xml:lang="en-US" xmlns="{_NS}">',
-        ' <metadata name="Application">charts23d</metadata>',
+        ' <metadata name="Application">charts3dprint</metadata>',
         ' <resources>',
         '  <basematerials id="100">',
         "\n".join(bases),

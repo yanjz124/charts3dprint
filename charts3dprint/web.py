@@ -1,8 +1,8 @@
 """
-Local web GUI for charts23d. Search a chart, edit/reorder colors with a live
+Local web GUI for charts3dprint. Search a chart, edit/reorder colors with a live
 preview, then generate the printable 3MF. Reuses faa/extract/build/generate.
 
-Run:  python -m charts23d.web    (opens http://127.0.0.1:5000)
+Run:  python -m charts3dprint.web    (opens http://127.0.0.1:5000)
 """
 import base64
 import os
@@ -15,7 +15,7 @@ from . import faa, extract, build, complete, preview, export3mf, cli
 app = Flask(__name__)
 _LOCK = threading.Lock()          # serialize shapely/matplotlib work
 CACHE = cli._cache_dir()
-OUTDIR = os.path.abspath(os.environ.get("CHARTS23D_OUT", "charts23d_web_out"))
+OUTDIR = os.path.abspath(os.environ.get("CHARTS3DPRINT_OUT", "charts3dprint_web_out"))
 os.makedirs(OUTDIR, exist_ok=True)
 
 _feats = {}                       # pdf_path -> extracted Features (slow, cached)
@@ -160,7 +160,7 @@ def download(name):
 
 def main(port=5000, open_browser=True):
     url = f"http://127.0.0.1:{port}"
-    print(f"charts23d GUI -> {url}   (output dir: {OUTDIR})")
+    print(f"charts3dprint GUI -> {url}   (output dir: {OUTDIR})")
     if open_browser:
         import webbrowser
         threading.Timer(1.0, lambda: webbrowser.open(url)).start()
